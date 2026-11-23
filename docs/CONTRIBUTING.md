@@ -39,8 +39,9 @@ responsibility for the contribution.
   inspect the directly relevant modules for equivalent behavior. Reuse or
   minimally extend existing code.
 - Android is the only production and acceptance target. Target-specific build,
-  check, and test commands must use `aarch64-linux-android`; host or x86_64
-  success alone is insufficient.
+  check, and test commands must use a supported Android target
+  (`aarch64-linux-android` or `x86_64-linux-android`); host success alone is
+  insufficient.
 - Preserve compatibility with Android 13-17, Linux kernels 4.14-6.18, and newer
   LTS kernels. Do not claim that a platform was validated without evidence.
 - Do not add a non-Rust product.
@@ -104,8 +105,9 @@ State in the pull request what behavior remains unchanged.
 
 The [CI workflow](../.github/workflows/ci.yml) is the source of truth for the
 current toolchain and Android build environment. Use Rust nightly, the
-`aarch64-linux-android` target, an Android NDK version matching CI, and the
-CMake, Ninja, and bindgen tools required to build BoringSSL.
+`aarch64-linux-android` and `x86_64-linux-android` targets, an Android NDK
+version matching CI, and the CMake, Ninja, and bindgen tools required to build
+BoringSSL for each target.
 
 The generator has host-only checks, separate from Android production validation:
 
@@ -127,13 +129,15 @@ Rust changes must pass:
 cargo fmt --all -- --check
 cargo clippy --target aarch64-linux-android --workspace --all-targets -- -D warnings
 cargo test --target aarch64-linux-android --workspace --no-run
+cargo clippy --target x86_64-linux-android --workspace --all-targets -- -D warnings
+cargo test --target x86_64-linux-android --workspace --no-run
 cargo deny --workspace check
 ```
 
-When an authorized aarch64 Android device is available, run every generated
-workspace test binary on the device. If no device is available, state that the
-device gate was not run; a host build is not full validation. Documentation-only
-changes do not require code tests.
+When an authorized aarch64 or x86_64 Android device is available, run every
+generated workspace test binary on that target. If neither device is available,
+state that the device gate was not run; a host build is not full validation.
+Documentation-only changes do not require code tests.
 
 For binary hot updates, prefer:
 
@@ -142,9 +146,12 @@ python scripts/deploy_hot_update.py --serial <serial> --abi arm64-v8a --restart 
 ```
 
 This command builds, deploys, verifies hashes, and restarts KeyMint and the
-injector without rebooting. Verify the affected runtime path after deployment;
-a healthy KeyMint listener alone does not prove that keystore2 refreshed a stale
-injector RPC session.
+injector without rebooting. Use `--abi x86_64` for WSA or other x86_64 guests.
+For binary-only x86_64 updates, set `BORINGSSL_BUILD_DIR` to the x86_64
+BoringSSL build directory first; `--full` delegates to `build.py`, which already
+selects it. Verify the affected runtime path after deployment; a healthy KeyMint
+listener alone does not prove that keystore2 refreshed a stale injector RPC
+session.
 
 Do not add `#[allow(...)]` only to silence Clippy. Any necessary exception must
 have a concrete, documented reason and direct maintainer approval.

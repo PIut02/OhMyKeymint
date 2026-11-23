@@ -34,10 +34,12 @@ from both attempts instead of guessing.
 The supported production range is:
 
 - Android 13 through Android 17;
-- `arm64-v8a` devices; and
+- `arm64-v8a` and `x86_64` devices; and
 - Linux kernels 4.14 through 6.18, plus newer LTS kernels.
 
-The installer requires API level 33 or higher.
+The installer requires API level 33 or higher. For Windows Subsystem for
+Android (WSA), use the `x86_64` package only when the guest reports an
+`x86_64` ABI and KernelSU or Magisk is available inside that guest.
 
 ### Does OMK add StrongBox to a phone that does not have it?
 

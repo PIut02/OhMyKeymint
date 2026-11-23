@@ -5,7 +5,8 @@
 - Before adding a method, helper, abstraction, configuration field, or utility, inspect the
   directly relevant modules for equivalent behavior. Reuse or minimally extend existing code.
 - Android is the only production and acceptance target. Target-specific build, check, and test
-  commands must use `aarch64-linux-android`; host or x86_64 success alone is insufficient.
+  commands must use a supported Android target (`aarch64-linux-android` or `x86_64-linux-android`);
+  host success alone is insufficient.
 - Compatibility scope: Android 13-17; Linux kernels 4.14-6.18 and newer LTS kernels. Preserve
   behavior across this range, and do not claim a platform was validated without evidence.
 - Do not introduce new non-Rust product or runtime code without explicit approval. Existing Python
@@ -127,23 +128,28 @@
   cargo fmt --all -- --check
   cargo clippy --target aarch64-linux-android --workspace --all-targets -- -D warnings
   cargo test --target aarch64-linux-android --workspace --no-run
+  cargo clippy --target x86_64-linux-android --workspace --all-targets -- -D warnings
+  cargo test --target x86_64-linux-android --workspace --no-run
   ```
 
 - Always follow [Rust Style Guide](https://doc.rust-lang.org/style-guide/index.html)
   and [Google Style Guides](https://google.github.io/styleguide/rustguide.html). Prefer Google's
   style if there's any conflicts.
 
-- When an authorized aarch64 Android device is available, execute every generated workspace test
-  binary on-device. If the device is unavailable, report that the device gate was not run; do not
-  present host-side compilation as full validation. Documentation-only changes do not require code
-  tests.
+- When an authorized aarch64 or x86_64 Android device is available, execute every generated
+  workspace test binary on that target. If neither device is available, report that the device
+  gate was not run; do not present host-side compilation as full validation. Documentation-only
+  changes do not require code tests.
 - For binary hot updates, prefer:
 
   ```sh
   python scripts/deploy_hot_update.py --serial <serial> --abi arm64-v8a --restart all
   ```
 
-  It builds, deploys, verifies hashes, and restarts KeyMint and the injector without rebooting.
+  Use `--abi x86_64` for WSA or other x86_64 guests. For binary-only x86_64 updates, set
+  `BORINGSSL_BUILD_DIR` to the x86_64 BoringSSL build directory first; `--full` delegates to
+  `build.py`, which already selects it. It builds, deploys, verifies hashes, and restarts KeyMint
+  and the injector without rebooting.
   Verify the affected runtime path after deployment; a healthy KeyMint listener alone does not
   prove that keystore2 has refreshed a stale injector RPC session.
 - Do not add `#[allow(...)]` solely to silence Clippy. Any necessary exception must have a concrete,
